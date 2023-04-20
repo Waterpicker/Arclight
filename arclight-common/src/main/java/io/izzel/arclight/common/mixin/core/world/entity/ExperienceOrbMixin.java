@@ -121,6 +121,6 @@ public abstract class ExperienceOrbMixin extends EntityMixin {
 
     @Override
     public void burn(float amount) {
-        this.hurt(DamageSource.IN_FIRE, amount);
+        this.hurt(damageSources().inFire(), amount);
     }
 }

@@ -506,7 +506,7 @@ public abstract class ServerPlayerMixin extends PlayerMixin implements ServerPla
                             this.enteredNetherPosition = this.position();
                         } else if (spawnPortal && ((WorldBridge) exitWorld[0]).bridge$getTypeKey() == LevelStem.END
                             && (((PortalInfoBridge) portalinfo).bridge$getPortalEventInfo() == null || ((PortalInfoBridge) portalinfo).bridge$getPortalEventInfo().getCanCreatePortal())) {
-                            this.createEndPlatform(exitWorld[0], new BlockPos(portalinfo.pos));
+                            this.createEndPlatform(exitWorld[0], new BlockPos((int) portalinfo.pos.x, (int) portalinfo.pos.y, (int) portalinfo.pos.z));
                         }
                     }
 

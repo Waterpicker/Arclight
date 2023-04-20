@@ -114,7 +114,7 @@ public class ServerHandshakeNetHandlerMixin {
             case STATUS: {
                 if (this.server.repliesToStatus()) {
                     this.connection.setProtocol(ConnectionProtocol.STATUS);
-                    this.connection.setListener(new ServerStatusPacketListenerImpl(this.server, this.connection));
+                    this.connection.setListener(new ServerStatusPacketListenerImpl(this.server.getStatus(), this.connection));
                 } else {
                     this.connection.disconnect(IGNORE_STATUS_REASON);
                 }

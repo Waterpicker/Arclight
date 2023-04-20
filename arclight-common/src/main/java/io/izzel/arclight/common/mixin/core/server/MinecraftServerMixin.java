@@ -6,6 +6,7 @@ import io.izzel.arclight.common.bridge.core.command.ICommandSourceBridge;
 import io.izzel.arclight.common.bridge.core.server.MinecraftServerBridge;
 import io.izzel.arclight.common.bridge.core.world.WorldBridge;
 import io.izzel.arclight.common.mod.ArclightConstants;
+import io.izzel.arclight.common.mod.server.ArclightServer;
 import io.izzel.arclight.common.mod.server.BukkitRegistry;
 import io.izzel.arclight.common.mod.util.ArclightCaptures;
 import io.izzel.arclight.common.mod.util.BukkitOptionParser;
@@ -71,10 +72,7 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.slf4j.Logger;
 import org.spigotmc.WatchdogThread;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -89,6 +87,7 @@ import java.lang.management.ManagementFactory;
 import java.net.Proxy;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 
@@ -99,9 +98,9 @@ public abstract class MinecraftServerMixin extends ReentrantBlockableEventLoop<T
     @Shadow private int tickCount;
     @Shadow protected abstract boolean initServer() throws IOException;
     @Shadow protected long nextTickTime;
+    @Mutable
     @Shadow @Final private ServerStatus status;
     @Shadow @Nullable private String motd;
-    @Shadow protected abstract void updateStatusIcon(ServerStatus response);
     @Shadow private volatile boolean running;
     @Shadow private long lastOverloadWarning;
     @Shadow @Final static Logger LOGGER;
@@ -207,10 +206,7 @@ public abstract class MinecraftServerMixin extends ReentrantBlockableEventLoop<T
             }
             ServerLifecycleHooks.handleServerStarted((MinecraftServer) (Object) this);
             this.nextTickTime = Util.getMillis();
-            this.status.setDescription(Component.literal(this.motd));
-            this.status.setVersion(new ServerStatus.Version(SharedConstants.getCurrentVersion().getName(), SharedConstants.getCurrentVersion().getProtocolVersion()));
-            this.status.setEnforcesSecureChat(this.enforceSecureProfile());
-            this.updateStatusIcon(this.status);
+            this.status = new ServerStatus(Component.literal(this.motd), status.players(), Optional.of(new ServerStatus.Version(SharedConstants.getCurrentVersion().getName(), SharedConstants.getCurrentVersion().getProtocolVersion())), status.favicon(), this.enforceSecureProfile(), status.forgeData());
 
             Arrays.fill(recentTps, 20);
             long curTime, tickSection = Util.getMillis(), tickCount = 1;
@@ -498,10 +494,10 @@ public abstract class MinecraftServerMixin extends ReentrantBlockableEventLoop<T
         cir.setReturnValue(!this.levels.isEmpty());
     }
 
-    @Inject(method = "desc=/V$/", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/repository/PackRepository;setSelected(Ljava/util/Collection;)V"))
-    private void arclight$syncCommand(CallbackInfo ci) {
-        this.server.syncCommands();
-    }
+//    @Inject(method = "desc=/V$/", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/repository/PackRepository;setSelected(Ljava/util/Collection;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
+//    private static void arclight$syncCommand(CallbackInfo ci) {
+//        ArclightServer.get().syncCommands();
+//    } TODo: Figure out why this is sbeing annoying!
 
     /**
      * @author IzzelAliz

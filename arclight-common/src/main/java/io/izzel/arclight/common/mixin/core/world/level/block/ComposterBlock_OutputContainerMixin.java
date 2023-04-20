@@ -6,6 +6,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.ComposterBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import org.bukkit.craftbukkit.v.inventory.CraftBlockInventoryHolder;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -37,7 +38,11 @@ public abstract class ComposterBlock_OutputContainerMixin extends SimpleContaine
     @Overwrite
     public void setChanged() {
         if (this.isEmpty()) {
-            ComposterBlock.empty(this.state, this.level, this.pos);
+//            ComposterBlock.empty(null, this.state, this.level, this.pos); TODO: Figure out how to get ComposterBlock.empty working
+            BlockState blockstate = this.state.setValue(ComposterBlock.LEVEL, 0);
+            level.setBlock(this.pos, blockstate, 3);
+            level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(null, blockstate));
+
             this.changed = true;
         } else {
             this.level.setBlock(this.pos, this.state, 3);

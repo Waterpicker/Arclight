@@ -29,6 +29,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -220,6 +221,8 @@ public abstract class EntityMixin implements InternalEntityBridge, EntityBridge,
     @Shadow protected abstract SoundEvent getSwimSplashSound();
     @Shadow protected abstract SoundEvent getSwimHighSpeedSplashSound();
     // @formatter:on
+
+    @Shadow public abstract DamageSources damageSources();
 
     private static final int CURRENT_LEVEL = 2;
     public boolean persist = true;
@@ -497,7 +500,7 @@ public abstract class EntityMixin implements InternalEntityBridge, EntityBridge,
 
     public void burn(float amount) {
         if (!this.fireImmune()) {
-            this.hurt(DamageSource.IN_FIRE, amount);
+            this.hurt(damageSources().inFire(), amount);
         }
     }
 
@@ -833,7 +836,7 @@ public abstract class EntityMixin implements InternalEntityBridge, EntityBridge,
             return false;
         }
         CraftEventFactory.entityDamage = entity;
-        if (!this.hurt(DamageSource.LIGHTNING_BOLT, amount)) {
+        if (!this.hurt(damageSources().lightningBolt(), amount)) {
             CraftEventFactory.entityDamage = null;
             return false;
         }

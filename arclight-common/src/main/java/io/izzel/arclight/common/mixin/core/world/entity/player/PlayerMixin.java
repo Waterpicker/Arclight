@@ -25,11 +25,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.Stats;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -193,7 +195,7 @@ public abstract class PlayerMixin extends LivingEntityMixin implements PlayerEnt
             return false;
         if (this.isInvulnerableTo(source)) {
             return false;
-        } else if (this.abilities.invulnerable && !source.isBypassInvul()) {
+        } else if (this.abilities.invulnerable && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return false;
         } else {
             this.noActionTime = 0;
@@ -316,7 +318,7 @@ public abstract class PlayerMixin extends LivingEntityMixin implements PlayerEnt
                     }
                 }
                 final Vec3 vec3d = entity.getDeltaMovement();
-                final boolean flag6 = entity.hurt(DamageSource.playerAttack((net.minecraft.world.entity.player.Player) (Object) this), f);
+                final boolean flag6 = entity.hurt(damageSources().playerAttack((net.minecraft.world.entity.player.Player) (Object) this), f);
                 if (flag6) {
                     if (i > 0) {
                         if (entity instanceof LivingEntity) {
@@ -331,7 +333,7 @@ public abstract class PlayerMixin extends LivingEntityMixin implements PlayerEnt
                         final float f5 = 1.0f + EnchantmentHelper.getSweepingDamageRatio((net.minecraft.world.entity.player.Player) (Object) this) * f;
                         final List<LivingEntity> list = this.level.getEntitiesOfClass(LivingEntity.class, this.getItemInHand(InteractionHand.MAIN_HAND).getSweepHitBox((net.minecraft.world.entity.player.Player) (Object) this, entity));
                         for (final LivingEntity entityliving : list) {
-                            if (entityliving != (Object) this && entityliving != entity && !this.isAlliedTo(entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.canHit(entityliving, 0) && entityliving.hurt(((DamageSourceBridge) DamageSource.playerAttack((net.minecraft.world.entity.player.Player) (Object) this)).bridge$sweep(), f5)) {
+                            if (entityliving != (Object) this && entityliving != entity && !this.isAlliedTo(entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.canReach(entityliving, 0) && entityliving.hurt(((DamageSourceBridge) damageSources().playerAttack((net.minecraft.world.entity.player.Player) (Object) this)).bridge$sweep(), f5)) {
                                 entityliving.knockback(0.4f, Mth.sin(this.getYRot() * 0.017453292f), -Mth.cos(this.getYRot() * 0.017453292f));
                             }
                         }

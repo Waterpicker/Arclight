@@ -17,6 +17,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.ForgeEventFactory;
@@ -45,20 +46,20 @@ public class TeleportCommandMixin {
      * @reason
      */
     @Overwrite
-    private static void performTeleport(CommandSourceStack source, Entity teleport, ServerLevel level, double x, double y, double z, Set<ClientboundPlayerPositionPacket.RelativeArgument> p_139021_, float p_139022_, float p_139023_, @Nullable TeleportCommand.LookAt p_139024_) throws CommandSyntaxException {
+    private static void performTeleport(CommandSourceStack source, Entity teleport, ServerLevel level, double x, double y, double z, Set<RelativeMovement> p_139021_, float p_139022_, float p_139023_, @Nullable TeleportCommand.LookAt p_139024_) throws CommandSyntaxException {
         EntityTeleportEvent.TeleportCommand event = ForgeEventFactory.onEntityTeleportCommand(teleport, x, y, z);
         if (event.isCanceled()) return;
         x = event.getTargetX();
         y = event.getTargetY();
         z = event.getTargetZ();
-        BlockPos blockpos = new BlockPos(x, y, z);
+        BlockPos blockpos = new BlockPos((int) x, (int) y, (int) z);
         if (!Level.isInSpawnableBounds(blockpos)) {
             throw INVALID_POSITION.create();
         } else {
             float yaw = Mth.wrapDegrees(p_139022_);
             float f1 = Mth.wrapDegrees(p_139023_);
             if (teleport instanceof ServerPlayer) {
-                ChunkPos chunkpos = new ChunkPos(new BlockPos(x, y, z));
+                ChunkPos chunkpos = new ChunkPos(new BlockPos((int) x, (int) y, (int) z));
                 level.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 1, teleport.getId());
                 teleport.stopRiding();
                 if (((ServerPlayer) teleport).isSleeping()) {

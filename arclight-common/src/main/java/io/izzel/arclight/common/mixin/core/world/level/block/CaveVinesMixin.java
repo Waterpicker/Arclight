@@ -21,6 +21,7 @@ import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 
 @Mixin(CaveVines.class)
@@ -31,7 +32,7 @@ public interface CaveVinesMixin {
      * @reason
      */
     @Overwrite
-    static InteractionResult use(BlockState state, Level level, BlockPos pos) {
+    static InteractionResult use(@Nullable Entity entity1, BlockState state, Level level, BlockPos pos) {
         if (state.getValue(CaveVines.BERRIES)) {
             Entity entity = ArclightCaptures.getEntityChangeBlock();
             if (entity != null) {

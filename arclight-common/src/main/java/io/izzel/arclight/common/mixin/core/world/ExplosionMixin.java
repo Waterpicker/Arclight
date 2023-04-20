@@ -99,7 +99,7 @@ public abstract class ExplosionMixin implements ExplosionBridge {
         if (this.radius < 0.1F) {
             return;
         }
-        this.level.gameEvent(this.source, GameEvent.EXPLODE, new BlockPos(this.x, this.y, this.z));
+        this.level.gameEvent(this.source, GameEvent.EXPLODE, new BlockPos((int) this.x, (int) this.y, (int) this.z));
         Set<BlockPos> set = Sets.newHashSet();
         int i = 16;
 
@@ -120,7 +120,7 @@ public abstract class ExplosionMixin implements ExplosionBridge {
                         double d8 = this.z;
 
                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
-                            BlockPos blockpos = new BlockPos(d4, d6, d8);
+                            BlockPos blockpos = new BlockPos((int) d4, (int) d6, (int) d8);
                             BlockState blockstate = this.level.getBlockState(blockpos);
                             FluidState fluidstate = this.level.getFluidState(blockpos);
 

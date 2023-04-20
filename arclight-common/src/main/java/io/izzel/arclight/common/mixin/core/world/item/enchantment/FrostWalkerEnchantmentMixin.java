@@ -28,7 +28,7 @@ public class FrostWalkerEnchantmentMixin {
             float f = (float) Math.min(16, 2 + level);
             BlockPos.MutableBlockPos blockpos$mutable = new BlockPos.MutableBlockPos();
 
-            for (BlockPos blockpos : BlockPos.betweenClosed(pos.offset((double) (-f), -1.0D, (double) (-f)), pos.offset((double) f, -1.0D, (double) f))) {
+            for (BlockPos blockpos : BlockPos.betweenClosed(pos.offset((int) -f, (int) -1.0D, (int) -f), pos.offset((int) f, (int) -1.0D, (int) f))) {
                 if (blockpos.closerToCenterThan(living.position(), (double) f)) {
                     blockpos$mutable.set(blockpos.getX(), blockpos.getY() + 1, blockpos.getZ());
                     BlockState blockstate1 = worldIn.getBlockState(blockpos$mutable);

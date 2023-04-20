@@ -37,10 +37,10 @@ public class MobEffectMixin {
         ((LivingEntityBridge) livingEntity).bridge$pushHealReason(EntityRegainHealthEvent.RegainReason.MAGIC);
     }
 
-    @Redirect(method = "applyEffectTick", at = @At(value = "FIELD", ordinal = 0, target = "Lnet/minecraft/world/damagesource/DamageSource;MAGIC:Lnet/minecraft/world/damagesource/DamageSource;"))
-    private DamageSource arclight$redirectPoison() {
-        return CraftEventFactory.POISON;
-    }
+//    @Redirect(method = "applyEffectTick", at = @At(value = "FIELD", ordinal = 0, target = "Lnet/minecraft/world/damagesource/DamageSource;MAGIC:Lnet/minecraft/world/damagesource/DamageSource;"))
+//    private DamageSource arclight$redirectPoison() {
+//        return CraftEventFactory.POISON;
+//    }
 
     @Redirect(method = "applyEffectTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/food/FoodData;eat(IF)V"))
     public void arclight$foodLevelChange(FoodData foodStats, int foodLevelIn, float foodSaturationModifier, LivingEntity livingEntity, int amplifier) {

@@ -22,12 +22,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.Stats;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.CombatTracker;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
+import net.minecraft.world.damagesource.*;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -514,7 +513,7 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
             return false;
         } else if (this.dead || this.isRemoved() || this.getHealth() <= 0.0F) {
             return false;
-        } else if (source.isFire() && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+        } else if (source.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
             return false;
         } else {
             if (this.isSleeping() && !this.level.isClientSide) {
@@ -531,7 +530,7 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
                 this.hurtCurrentlyUsedShield(amount);
                 f1 = amount;
                 amount = 0.0F;
-                if (!source.isProjectile()) {
+                if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
                     Entity entity = source.getDirectEntity();
                     if (entity instanceof LivingEntity) {
                         this.blockUsingShield((LivingEntity) entity);
@@ -596,15 +595,15 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
             if (flag1) {
                 if (flag) {
                     this.level.broadcastEntityEvent((LivingEntity) (Object) this, (byte) 29);
-                } else if (source instanceof EntityDamageSource && ((EntityDamageSource) source).isThorns()) {
+                } else if (source.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)) { //TODO: IS this how isThorn worked?
                     this.level.broadcastEntityEvent((LivingEntity) (Object) this, (byte) 33);
                 } else {
                     byte b0;
-                    if (source == DamageSource.DROWN) {
+                    if (source.is(DamageTypes.DROWN)) {
                         b0 = 36;
-                    } else if (source.isFire()) {
+                    } else if (source.is(DamageTypeTags.IS_FIRE)) {
                         b0 = 37;
-                    } else if (source == DamageSource.SWEET_BERRY_BUSH) {
+                    } else if (source.is(DamageTypes.SWEET_BERRY_BUSH)) {
                         b0 = 44;
                     } else {
                         b0 = 2;
@@ -613,11 +612,11 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
                     this.level.broadcastEntityEvent((LivingEntity) (Object) this, b0);
                 }
 
-                if (source != DamageSource.DROWN && (!flag || amount > 0.0F)) {
+                if (!source.is(DamageTypes.DROWN) && (!flag || amount > 0.0F)) {
                     this.markHurt();
                 }
 
-                if (entity1 != null && !source.isExplosion()) {
+                if (entity1 != null && !source.is(DamageTypeTags.IS_EXPLOSION)) {
                     double d1 = entity1.getX() - this.getX();
 
                     double d0;
@@ -681,7 +680,7 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
 
             float originalDamage = f;
             Function<Double, Double> hardHat = f12 -> {
-                if (damagesource.isDamageHelmet() && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+                if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
                     return -(f12 - (f12 * 0.75F));
                 }
                 return -0.0;
@@ -711,7 +710,7 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
             f += armorModifier;
 
             Function<Double, Double> resistance = f15 -> {
-                if (!damagesource.isBypassMagic() && this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && damagesource != DamageSource.OUT_OF_WORLD) {
+                if (!damagesource.is(DamageTypeTags.BYPASSES_ENCHANTMENTS) && this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypes.OUT_OF_WORLD)) { //TODO: is isBypassMagic enchantments?
                     int i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                     int j = 25 - i;
                     float f1 = f15.floatValue() * (float) j;
@@ -753,12 +752,12 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
             }
 
             // Apply damage to helmet
-            if (damagesource.isDamageHelmet() && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+            if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
                 this.hurtHelmet(damagesource, f);
             }
 
             // Apply damage to armor
-            if (!damagesource.isBypassArmor()) {
+            if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
                 float armorDamage = (float) (event.getDamage() + event.getDamage(EntityDamageEvent.DamageModifier.BLOCKING) + event.getDamage(EntityDamageEvent.DamageModifier.HARD_HAT));
                 this.hurtArmor(damagesource, armorDamage);
             }
@@ -904,7 +903,7 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
      */
     @Overwrite
     private boolean checkTotemDeathProtection(DamageSource damageSourceIn) {
-        if (damageSourceIn.isBypassInvul()) {
+        if (damageSourceIn.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return false;
         } else {
             net.minecraft.world.item.ItemStack itemstack = null;

@@ -32,7 +32,7 @@ public abstract class LecternTileEntity1Mixin implements IInventoryBridge, Conta
         if (index == 0) {
             outerThis.setBook(stack);
             if (outerThis.getLevel() != null) {
-                LecternBlock.resetBookState(outerThis.getLevel(), outerThis.getBlockPos(), outerThis.getBlockState(), outerThis.hasBook());
+                LecternBlock.resetBookState(null, outerThis.getLevel(), outerThis.getBlockPos(), outerThis.getBlockState(), outerThis.hasBook());
             }
         }
     }

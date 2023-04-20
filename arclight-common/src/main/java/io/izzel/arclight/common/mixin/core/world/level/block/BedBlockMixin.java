@@ -75,7 +75,7 @@ public abstract class BedBlockMixin {
                         }
 
                         Vec3 vec3d = pos.getCenter();
-                        level.explode(null, DamageSource.badRespawnPointExplosion(vec3d), null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                        level.explode(null, p_49518_.damageSources().badRespawnPointExplosion(vec3d), null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
                     } else if (p_49477_.getMessage() != null) {
                         p_49518_.displayClientMessage(p_49477_.getMessage(), true);
                     }

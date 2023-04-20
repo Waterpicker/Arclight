@@ -17,10 +17,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SnowGolem.class)
 public abstract class SnowGolemMixin extends PathfinderMobMixin {
 
-    @Redirect(method = "aiStep", at = @At(value = "FIELD", target = "Lnet/minecraft/world/damagesource/DamageSource;ON_FIRE:Lnet/minecraft/world/damagesource/DamageSource;"))
-    private DamageSource arclight$useMelting() {
-        return CraftEventFactory.MELTING;
-    }
+//    @Redirect(method = "aiStep", at = @At(value = "FIELD", target = "Lnet/minecraft/world/damagesource/DamageSource;ON_FIRE:Lnet/minecraft/world/damagesource/DamageSource;"))
+//    private DamageSource arclight$useMelting() {
+//        return CraftEventFactory.MELTING;
+//    }
 
     @Redirect(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;setBlockAndUpdate(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)Z"))
     private boolean arclight$blockForm(Level world, BlockPos pos, BlockState state) {

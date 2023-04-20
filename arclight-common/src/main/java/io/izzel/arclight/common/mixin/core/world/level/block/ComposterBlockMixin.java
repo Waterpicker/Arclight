@@ -25,14 +25,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import javax.annotation.Nullable;
+
 @Mixin(ComposterBlock.class)
 public abstract class ComposterBlockMixin {
 
     // @formatter:off
     @Shadow @Final public static IntegerProperty LEVEL;
     @Shadow @Final public static Object2FloatMap<ItemLike> COMPOSTABLES;
-    @Shadow public static BlockState empty(BlockState state, LevelAccessor world, BlockPos pos) { return null; }
-    @Shadow public static BlockState extractProduce(BlockState state, Level world, BlockPos pos) { return null; }
+    @Shadow public static BlockState empty(@Nullable Entity entity, BlockState state, LevelAccessor world, BlockPos pos) { return null; }
+    @Shadow public static BlockState extractProduce(@Nullable Entity entity, BlockState state, Level world, BlockPos pos) { return null; }
     // @formatter:on
 
     @SuppressWarnings({"InvalidMemberReference", "UnresolvedMixinReference", "MixinAnnotationTarget", "InvalidInjectorMethodSignature"})
@@ -48,7 +50,7 @@ public abstract class ComposterBlockMixin {
      * @reason
      */
     @Overwrite
-    public static BlockState insertItem(BlockState state, ServerLevel world, ItemStack stack, BlockPos pos) {
+    public static BlockState insertItem(@Nullable Entity entity, BlockState state, ServerLevel world, ItemStack stack, BlockPos pos) {
         int i = state.getValue(LEVEL);
         if (i < 7 && COMPOSTABLES.containsKey(stack.getItem())) {
             double rand = world.random.nextDouble();
@@ -67,10 +69,10 @@ public abstract class ComposterBlockMixin {
     }
 
     @Inject(method = "extractProduce", cancellable = true, at = @At("HEAD"))
-    private static void arclight$emptyComposter(BlockState state, Level world, BlockPos pos, CallbackInfoReturnable<BlockState> cir) {
+    private static void arclight$emptyComposter(@Nullable Entity entity1, BlockState state, Level world, BlockPos pos, CallbackInfoReturnable<BlockState> cir) {
         Entity entity = ArclightCaptures.getEntityChangeBlock();
         if (entity != null) {
-            BlockState blockState = empty(state, DummyGeneratorAccess.INSTANCE, pos);
+            BlockState blockState = empty(entity, state, DummyGeneratorAccess.INSTANCE, pos);
             if (CraftEventFactory.callEntityChangeBlockEvent(entity, pos, blockState).isCancelled()) {
                 cir.setReturnValue(state);
             }
@@ -79,7 +81,7 @@ public abstract class ComposterBlockMixin {
 
     private static BlockState extractProduce(BlockState state, Level world, BlockPos pos, Entity entity) {
         ArclightCaptures.captureEntityChangeBlock(entity);
-        return extractProduce(state, world, pos);
+        return extractProduce(entity, state, world, pos);
     }
 
     private static BlockState addItem(BlockState state, LevelAccessor world, BlockPos pos, ItemStack stack, double rand) {

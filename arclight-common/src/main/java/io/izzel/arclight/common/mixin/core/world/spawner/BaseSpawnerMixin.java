@@ -86,7 +86,7 @@ public abstract class BaseSpawnerMixin {
                     double d1 = j >= 2 ? listtag.getDouble(1) : (double) (pos.getY() + level.random.nextInt(3) - 1);
                     double d2 = j >= 3 ? listtag.getDouble(2) : (double) pos.getZ() + (level.random.nextDouble() - level.random.nextDouble()) * (double) this.spawnRange + 0.5D;
                     if (level.noCollision(optional.get().getAABB(d0, d1, d2))) {
-                        BlockPos blockpos = new BlockPos(d0, d1, d2);
+                        BlockPos blockpos = new BlockPos((int) d0, (int) d1, (int) d2);
                         if (spawnData.getCustomSpawnRules().isPresent()) {
                             if (!optional.get().getCategory().isFriendly() && level.getDifficulty() == Difficulty.PEACEFUL) {
                                 continue;
@@ -117,17 +117,14 @@ public abstract class BaseSpawnerMixin {
 
                         entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), level.random.nextFloat() * 360.0F, 0.0F);
                         if (entity instanceof Mob mob) {
-                            var res = ForgeEventFactory.canEntitySpawn(mob, level, (float) entity.getX(), (float) entity.getY(), (float) entity.getZ(), (BaseSpawner) (Object) this, MobSpawnType.SPAWNER);
-                            if (res == net.minecraftforge.eventbus.api.Event.Result.DENY) continue;
-                            if (res == net.minecraftforge.eventbus.api.Event.Result.DEFAULT) {
-                                if (spawnData.getCustomSpawnRules().isEmpty() && !mob.checkSpawnRules(level, MobSpawnType.SPAWNER) || !mob.checkSpawnObstruction(level)) {
-                                    continue;
-                                }
+                            if (spawnData.getCustomSpawnRules().isEmpty() && !mob.checkSpawnRules(level, MobSpawnType.SPAWNER) || !mob.checkSpawnObstruction(level)) {
+                                continue;
                             }
 
-                            if (spawnData.getEntityToSpawn().size() == 1 && spawnData.getEntityToSpawn().contains("id", 8)) {
-                                if (!ForgeEventFactory.doSpecialSpawn(mob, (LevelAccessor) level, (float) entity.getX(), (float) entity.getY(), (float) entity.getZ(), (BaseSpawner) (Object) this, MobSpawnType.SPAWNER))
-                                    ((Mob) entity).finalizeSpawn(level, level.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, null, null);
+                            var event = ForgeEventFactory.onFinalizeSpawnSpawner(mob,  level, level.getCurrentDifficultyAt(entity.blockPosition()), null, compoundtag, (BaseSpawner) (Object) this);
+
+                            if (event != null && spawnData.getEntityToSpawn().size() == 1 && spawnData.getEntityToSpawn().contains("id", 8)) {
+                                ((Mob) entity).finalizeSpawn(level, level.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, null, null);
                             }
                             if (((WorldBridge) mob.level).bridge$spigotConfig().nerfSpawnerMobs) {
                                 ((MobEntityBridge) mob).bridge$setAware(false);

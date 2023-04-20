@@ -3,6 +3,7 @@ package io.izzel.arclight.common.mixin.core.world.inventory;
 import io.izzel.arclight.common.bridge.core.inventory.container.LecternContainerBridge;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.LecternMenu;
 import net.minecraft.world.inventory.MenuType;
@@ -21,7 +22,7 @@ public class ContainerTypeMixin {
                 LecternMenu container = new LecternMenu(i);
                 ((LecternContainerBridge) container).bridge$setPlayerInventory(inv);
                 return (T) container;
-            })));
+            }, FeatureFlags.VANILLA_SET)));
         }
     }
 }

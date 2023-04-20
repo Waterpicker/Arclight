@@ -9,11 +9,11 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 @Mixin(JukeboxBlock.class)
 public class JukeBoxBlockMixin {
 
-    @ModifyArg(method = "setRecord", index = 0, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/JukeboxBlockEntity;setRecord(Lnet/minecraft/world/item/ItemStack;)V"))
-    private ItemStack arclight$oneItem(ItemStack stack) {
-        if (!stack.isEmpty()) {
-            stack.setCount(1);
-        }
-        return stack;
-    }
+//    @ModifyArg(method = "setRecord", index = 0, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/JukeboxBlockEntity;setRecord(Lnet/minecraft/world/item/ItemStack;)V"))
+//    private ItemStack arclight$oneItem(ItemStack stack) {
+//        if (!stack.isEmpty()) {
+//            stack.setCount(1);
+//        }
+//        return stack;
+//    }
 }

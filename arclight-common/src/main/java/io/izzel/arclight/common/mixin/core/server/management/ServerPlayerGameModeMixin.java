@@ -98,7 +98,7 @@ public abstract class ServerPlayerGameModeMixin implements PlayerInteractionMana
             level.sendBlockUpdated(blockPos, level.getBlockState(blockPos), level.getBlockState(blockPos), 3);
             return;
         }
-        if (!this.player.canInteractWith(blockPos, 1)) {
+        if (!this.player.canReach(blockPos, 1)) {
             this.debugLogging(blockPos, false, j, "too far");
         } else if (blockPos.getY() >= i) {
             this.player.connection.send(new ClientboundBlockUpdatePacket(blockPos, this.level.getBlockState(blockPos)));
