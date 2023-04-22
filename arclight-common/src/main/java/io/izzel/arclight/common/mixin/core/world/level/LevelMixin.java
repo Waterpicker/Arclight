@@ -11,6 +11,7 @@ import io.izzel.arclight.common.mod.util.ArclightCaptures;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -102,7 +103,7 @@ public abstract class LevelMixin implements WorldBridge, LevelWriter {
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void arclight$init(WritableLevelData info, ResourceKey<Level> dimension, Holder<DimensionType> dimType, Supplier<ProfilerFiller> profiler, boolean isRemote, boolean isDebug, long seed, int maxNeighborUpdates, CallbackInfo ci) {
+    private void arclight$init(WritableLevelData p_270739_, ResourceKey p_270683_, RegistryAccess p_270200_, Holder p_270240_, Supplier p_270692_, boolean p_270904_, boolean p_270470_, long p_270248_, int p_270466_, CallbackInfo ci) {
         ((WorldBorderBridge) this.worldBorder).bridge$setWorld((Level) (Object) this);
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
             if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {

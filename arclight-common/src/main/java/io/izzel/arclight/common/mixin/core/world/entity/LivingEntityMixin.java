@@ -23,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -30,12 +31,7 @@ import net.minecraft.world.damagesource.*;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ExperienceOrb;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
@@ -43,6 +39,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
@@ -61,7 +59,6 @@ import org.bukkit.craftbukkit.v.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v.inventory.CraftItemStack;
-import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
@@ -121,11 +118,9 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
     @Shadow public abstract boolean isDamageSourceBlocked(DamageSource damageSourceIn);
     @Shadow protected abstract void hurtCurrentlyUsedShield(float damage);
     @Shadow protected abstract void blockUsingShield(LivingEntity entityIn);
-    @Shadow public float animationSpeed;
     @Shadow public float lastHurt;
     @Shadow public int hurtDuration;
     @Shadow public int hurtTime;
-    @Shadow public float hurtDir;
     @Shadow public abstract void setLastHurtByMob(@Nullable LivingEntity livingBase);
     @Shadow @Nullable protected abstract SoundEvent getDeathSound();
     @Shadow protected abstract float getSoundVolume();
@@ -180,7 +175,6 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
     @Shadow public abstract boolean hasLineOfSight(Entity p_147185_);
     @Shadow protected abstract void hurtHelmet(DamageSource p_147213_, float p_147214_);
     @Shadow public abstract void stopUsingItem();
-    @Shadow protected abstract void playEquipSound(ItemStack p_217042_);
     @Shadow protected abstract boolean doesEmitEquipEvent(EquipmentSlot p_217035_);
     @Shadow protected abstract void verifyEquippedItem(ItemStack p_181123_);
     @Shadow public abstract boolean wasExperienceConsumed();
@@ -191,6 +185,12 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
     @Shadow public abstract SoundEvent getEatingSound(ItemStack p_21202_);
     @Shadow public abstract InteractionHand getUsedItemHand();
     // @formatter:on
+
+    @Shadow @Final public WalkAnimationState walkAnimation;
+
+    @Shadow public abstract void indicateDamage(double p_270514_, double p_270826_);
+
+    @Shadow protected abstract void actuallyHurt(DamageSource p_21240_, float p_21241_);
 
     public int expToDrop;
     public boolean forceDrops;
@@ -506,12 +506,12 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
      */
     @Overwrite
     public boolean hurt(DamageSource source, float amount) {
-        if (!ForgeHooks.onLivingAttack((LivingEntity) (Object) this, source, amount)) return false;
+        if (!net.minecraftforge.common.ForgeHooks.onLivingAttack((LivingEntity) (Object) this, source, amount)) return false;
         if (this.isInvulnerableTo(source)) {
             return false;
         } else if (this.level.isClientSide) {
             return false;
-        } else if (this.dead || this.isRemoved() || this.getHealth() <= 0.0F) {
+        } else if (this.isDeadOrDying()) {
             return false;
         } else if (source.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
             return false;
@@ -522,27 +522,33 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
 
             this.noActionTime = 0;
             float f = amount;
-            boolean flag = f > 0.0F && this.isDamageSourceBlocked(source); // Copied from below
+            boolean flag = false;
             float f1 = 0.0F;
-            // ShieldBlockEvent implemented in damageEntity0
-
-            if (false && amount > 0.0F && this.isDamageSourceBlocked(source)) {
-                this.hurtCurrentlyUsedShield(amount);
-                f1 = amount;
-                amount = 0.0F;
-                if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
-                    Entity entity = source.getDirectEntity();
-                    if (entity instanceof LivingEntity) {
-                        this.blockUsingShield((LivingEntity) entity);
+            if (amount > 0.0F && this.isDamageSourceBlocked(source)) {
+                net.minecraftforge.event.entity.living.ShieldBlockEvent ev = net.minecraftforge.common.ForgeHooks.onShieldBlock((LivingEntity) (Object) this, source, amount);
+                if(!ev.isCanceled()) {
+                    if(ev.shieldTakesDamage()) this.hurtCurrentlyUsedShield(amount);
+                    f1 = ev.getBlockedDamage();
+                    amount -= ev.getBlockedDamage();
+                    if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
+                        Entity entity = source.getDirectEntity();
+                        if (entity instanceof LivingEntity) {
+                            LivingEntity livingentity = (LivingEntity)entity;
+                            this.blockUsingShield(livingentity);
+                        }
                     }
+
+                    flag = true;
                 }
 
-                flag = true;
+                if (source.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
+                    amount *= 5.0F;
+                }
             }
 
-            this.animationSpeed = 1.5F;
+            this.walkAnimation.setSpeed(1.5F);
             boolean flag1 = true;
-            if ((float) this.invulnerableTime > 10.0F) {
+            if ((float)this.invulnerableTime > 10.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
                 if (amount <= this.lastHurt) {
                     return false;
                 }
@@ -550,41 +556,47 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
                 if (!this.damageEntity0(source, amount - this.lastHurt)) {
                     return false;
                 }
+
+                this.actuallyHurt(source, amount - this.lastHurt);
                 this.lastHurt = amount;
                 flag1 = false;
             } else {
                 if (!this.damageEntity0(source, amount)) {
                     return false;
                 }
+
                 this.lastHurt = amount;
                 this.invulnerableTime = 20;
+                this.actuallyHurt(source, amount);
                 this.hurtDuration = 10;
                 this.hurtTime = this.hurtDuration;
             }
 
-            if ((Object) this instanceof Animal) {
-                ((Animal) (Object) this).resetLove();
-                if ((Object) this instanceof TamableAnimal) {
-                    ((TamableAnimal) (Object) this).setOrderedToSit(false);
-                }
+            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+                this.hurtHelmet(source, amount);
+                amount *= 0.75F;
             }
 
-            this.hurtDir = 0.0F;
             Entity entity1 = source.getEntity();
             if (entity1 != null) {
                 if (entity1 instanceof LivingEntity) {
-                    this.setLastHurtByMob((LivingEntity) entity1);
+                    LivingEntity livingentity1 = (LivingEntity)entity1;
+                    if (!source.is(DamageTypeTags.NO_ANGER)) {
+                        this.setLastHurtByMob(livingentity1);
+                    }
                 }
 
                 if (entity1 instanceof net.minecraft.world.entity.player.Player) {
+                    Player player1 = (Player)entity1;
                     this.lastHurtByPlayerTime = 100;
-                    this.lastHurtByPlayer = (net.minecraft.world.entity.player.Player) entity1;
-                } else if (entity1 instanceof TamableAnimal wolfentity) {
-                    if (wolfentity.isTame()) {
+                    this.lastHurtByPlayer = player1;
+                } else if (entity1 instanceof net.minecraft.world.entity.TamableAnimal tamableEntity) {
+                    if (tamableEntity.isTame()) {
                         this.lastHurtByPlayerTime = 100;
-                        LivingEntity livingentity = wolfentity.getOwner();
-                        if (livingentity != null && livingentity.getType() == EntityType.PLAYER) {
-                            this.lastHurtByPlayer = (net.minecraft.world.entity.player.Player) livingentity;
+                        LivingEntity livingentity2 = tamableEntity.getOwner();
+                        if (livingentity2 instanceof Player) {
+                            Player player = (Player)livingentity2;
+                            this.lastHurtByPlayer = player;
                         } else {
                             this.lastHurtByPlayer = null;
                         }
@@ -594,40 +606,27 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
 
             if (flag1) {
                 if (flag) {
-                    this.level.broadcastEntityEvent((LivingEntity) (Object) this, (byte) 29);
-                } else if (source.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)) { //TODO: IS this how isThorn worked?
-                    this.level.broadcastEntityEvent((LivingEntity) (Object) this, (byte) 33);
+                    this.level.broadcastEntityEvent((Entity) (Object) this, (byte)29);
                 } else {
-                    byte b0;
-                    if (source.is(DamageTypes.DROWN)) {
-                        b0 = 36;
-                    } else if (source.is(DamageTypeTags.IS_FIRE)) {
-                        b0 = 37;
-                    } else if (source.is(DamageTypes.SWEET_BERRY_BUSH)) {
-                        b0 = 44;
-                    } else {
-                        b0 = 2;
-                    }
-
-                    this.level.broadcastEntityEvent((LivingEntity) (Object) this, b0);
+                    this.level.broadcastDamageEvent((Entity) (Object) this, source);
                 }
 
-                if (!source.is(DamageTypes.DROWN) && (!flag || amount > 0.0F)) {
+                if (!source.is(DamageTypeTags.NO_IMPACT) && (!flag || amount > 0.0F)) {
                     this.markHurt();
                 }
 
                 if (entity1 != null && !source.is(DamageTypeTags.IS_EXPLOSION)) {
-                    double d1 = entity1.getX() - this.getX();
+                    double d0 = entity1.getX() - this.getX();
 
-                    double d0;
-                    for (d0 = entity1.getZ() - this.getZ(); d1 * d1 + d0 * d0 < 1.0E-4D; d0 = (Math.random() - Math.random()) * 0.01D) {
-                        d1 = (Math.random() - Math.random()) * 0.01D;
+                    double d1;
+                    for(d1 = entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
+                        d0 = (Math.random() - Math.random()) * 0.01D;
                     }
 
-                    this.hurtDir = (float) (Mth.atan2(d0, d1) * (double) (180F / (float) Math.PI) - (double) this.getYRot());
-                    this.knockback(0.4F, d1, d0);
-                } else {
-                    this.hurtDir = (float) ((int) (Math.random() * 2.0D) * 180);
+                    this.knockback(0.4F, d0, d1);
+                    if (!flag) {
+                        this.indicateDamage(d0, d1);
+                    }
                 }
             }
 
@@ -653,12 +652,12 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
             if ((Object) this instanceof ServerPlayer) {
                 CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer) (Object) this, source, f, amount, flag);
                 if (f1 > 0.0F && f1 < 3.4028235E37F) {
-                    ((ServerPlayer) (Object) this).awardStat(Stats.DAMAGE_BLOCKED_BY_SHIELD, Math.round(f1 * 10.0F));
+                    ((ServerPlayer) (Object) this).awardStat(Stats.CUSTOM.get(Stats.DAMAGE_BLOCKED_BY_SHIELD), Math.round(f1 * 10.0F));
                 }
             }
 
             if (entity1 instanceof ServerPlayer) {
-                CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer) entity1, (LivingEntity) (Object) this, source, f, amount, flag);
+                CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)entity1, (Entity) (Object) this, source, f, amount, flag);
             }
 
             return flag2;
@@ -1021,7 +1020,7 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
         entityLiving, CallbackInfo ci) {
         if (this instanceof ServerPlayerEntityBridge) {
             final org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(itemStack);
-            final PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, CraftEquipmentSlot.getHand(this.getUsedItemHand()));
+            final PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((org.bukkit.entity.Player) this.getBukkitEntity(), craftItem, CraftEquipmentSlot.getHand(this.getUsedItemHand()));
             Bukkit.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 ((ServerPlayerEntityBridge) this).bridge$getBukkitEntity().updateInventory();
@@ -1129,16 +1128,18 @@ public abstract class LivingEntityMixin extends EntityMixin implements LivingEnt
         this.setItemSlot(slotIn, stack, silent);
     }
 
-    protected void equipEventAndSound(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem, boolean silent) {
-        boolean flag = oldItem.isEmpty() && newItem.isEmpty();
+    protected void equipEventAndSound(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem, boolean slient) {
+        boolean flag = newItem.isEmpty() && oldItem.isEmpty();
+        if (!flag && !ItemStack.isSameItemSameTags(oldItem, newItem) && !this.firstTick) {
+            Equipable equipable = Equipable.get(newItem);
+            if (equipable != null && !this.isSpectator() && equipable.getEquipmentSlot() == slot) {
+                if (!this.level.isClientSide() && !slient) {
+                    this.level.playSound((Player)null, this.getX(), this.getY(), this.getZ(), equipable.getEquipSound(), this.getSoundSource(), 1.0F, 1.0F);
+                }
 
-        if (!flag && !ItemStack.isSame(oldItem, newItem) && !this.firstTick) {
-            if (slot.getType() == EquipmentSlot.Type.ARMOR && !silent) {
-                this.playEquipSound(newItem);
-            }
-
-            if (this.doesEmitEquipEvent(slot)) {
-                this.gameEvent(GameEvent.EQUIP);
+                if (this.doesEmitEquipEvent(slot)) {
+                    this.gameEvent(GameEvent.EQUIP);
+                }
             }
 
         }

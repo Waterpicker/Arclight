@@ -6,7 +6,6 @@ import io.izzel.arclight.common.bridge.core.command.ICommandSourceBridge;
 import io.izzel.arclight.common.bridge.core.server.MinecraftServerBridge;
 import io.izzel.arclight.common.bridge.core.world.WorldBridge;
 import io.izzel.arclight.common.mod.ArclightConstants;
-import io.izzel.arclight.common.mod.server.ArclightServer;
 import io.izzel.arclight.common.mod.server.BukkitRegistry;
 import io.izzel.arclight.common.mod.util.ArclightCaptures;
 import io.izzel.arclight.common.mod.util.BukkitOptionParser;
@@ -86,8 +85,10 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.Proxy;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 
@@ -99,18 +100,21 @@ public abstract class MinecraftServerMixin extends ReentrantBlockableEventLoop<T
     @Shadow protected abstract boolean initServer() throws IOException;
     @Shadow protected long nextTickTime;
     @Mutable
-    @Shadow @Final private ServerStatus status;
+    @Shadow
+    private ServerStatus status;
     @Shadow @Nullable private String motd;
     @Shadow private volatile boolean running;
     @Shadow private long lastOverloadWarning;
-    @Shadow @Final static Logger LOGGER;
+    @Shadow @Final
+    public static Logger LOGGER;
     @Shadow public abstract void tickServer(BooleanSupplier hasTimeLeft);
     @Shadow protected abstract boolean haveTime();
     @Shadow private boolean mayHaveDelayedTasks;
     @Shadow private long delayedTasksMaxNextTickTime;
     @Shadow protected abstract void waitUntilNextTick();
     @Shadow private volatile boolean isReady;
-    @Shadow protected abstract void onServerCrash(CrashReport report);
+    @Shadow
+    public abstract void onServerCrash(CrashReport report);
     @Shadow public abstract File getServerDirectory();
     @Shadow private boolean stopped;
     @Shadow public abstract void stopServer();
@@ -147,6 +151,8 @@ public abstract class MinecraftServerMixin extends ReentrantBlockableEventLoop<T
     @Shadow @Nullable private MinecraftServer.TimeProfiler debugCommandProfiler;
     @Shadow public abstract LayeredRegistryAccess<RegistryLayer> registries();
     // @formatter:on
+
+    @Shadow public abstract CompletableFuture<Void> reloadResources(Collection<String> p_129862_);
 
     public MinecraftServerMixin(String name) {
         super(name);
@@ -497,7 +503,7 @@ public abstract class MinecraftServerMixin extends ReentrantBlockableEventLoop<T
 //    @Inject(method = "desc=/V$/", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/repository/PackRepository;setSelected(Ljava/util/Collection;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
 //    private static void arclight$syncCommand(CallbackInfo ci) {
 //        ArclightServer.get().syncCommands();
-//    } TODo: Figure out why this is sbeing annoying!
+//    } //TODo: Figure out why this is sbeing annoying!
 
     /**
      * @author IzzelAliz

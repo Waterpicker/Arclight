@@ -111,7 +111,7 @@ public class ArclightMixinPlugin implements IMixinConfigPlugin {
     //    .build();
 
     private final Set<String> modifyConstructor = ImmutableSet.<String>builder()
-        .add("net.minecraft.world.level.Level")
+//        .add("net.minecraft.world.level.Level")
         .add("net.minecraft.server.level.ServerLevel")
         .add("net.minecraft.world.SimpleContainer")
         .add("net.minecraft.world.level.block.ComposterBlock")

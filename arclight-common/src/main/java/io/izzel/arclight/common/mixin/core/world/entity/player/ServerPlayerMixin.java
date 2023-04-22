@@ -787,7 +787,7 @@ public abstract class ServerPlayerMixin extends PlayerMixin implements ServerPla
         this.clientViewDistance = packetIn.viewDistance();
     }
 
-    @Inject(method = "setCamera", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;teleport(DDDFF)V"))
+    @Inject(method = "setCamera", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;teleportTo(Lnet/minecraft/server/level/ServerLevel;DDDLjava/util/Set;FF)Z"))
     private void arclight$spectatorReason(Entity entityToSpectate, CallbackInfo ci) {
         this.bridge$pushChangeDimensionCause(PlayerTeleportEvent.TeleportCause.SPECTATE);
     }

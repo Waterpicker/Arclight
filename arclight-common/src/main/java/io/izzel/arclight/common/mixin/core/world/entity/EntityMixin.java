@@ -25,6 +25,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -126,7 +127,7 @@ public abstract class EntityMixin implements InternalEntityBridge, EntityBridge,
     @Shadow protected abstract Vec3 collide(Vec3 vec);
     @Shadow public int tickCount;
     @Shadow private Entity vehicle;
-    @Shadow @Nullable public abstract Entity getControllingPassenger();
+    @Shadow @Nullable public abstract LivingEntity getControllingPassenger();
     @Shadow public abstract boolean isSwimming();
     @Shadow public abstract boolean isAlive();
     @Shadow public abstract void unRide();
@@ -223,6 +224,10 @@ public abstract class EntityMixin implements InternalEntityBridge, EntityBridge,
     // @formatter:on
 
     @Shadow public abstract DamageSources damageSources();
+
+    @Shadow public abstract boolean isSpectator();
+
+    @Shadow public abstract SoundSource getSoundSource();
 
     private static final int CURRENT_LEVEL = 2;
     public boolean persist = true;
@@ -706,7 +711,7 @@ public abstract class EntityMixin implements InternalEntityBridge, EntityBridge,
             } else {
                 List<Entity> list = Lists.newArrayList(this.passengers);
 
-                if (!this.level.isClientSide && entity instanceof Player && !(this.getControllingPassenger() instanceof Player)) {
+                if (!this.level.isClientSide && entity instanceof Player && !(this.getControllingPassenger().getControllingPassenger() instanceof Player)) {
                     list.add(0, entity);
                 } else {
                     list.add(entity);

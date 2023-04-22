@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(SummonCommand.class)
 public class SummonCommandMixin {
 
-    @Inject(method = "spawnEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;tryAddFreshEntityWithPassengers(Lnet/minecraft/world/entity/Entity;)Z"))
+    @Inject(method = "spawnEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/commands/SummonCommand;createEntity(Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/core/Holder$Reference;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/nbt/CompoundTag;Z)Lnet/minecraft/world/entity/Entity;"))
     private static void arclight$summonReason(CommandSourceStack source, Holder.Reference<EntityType<?>> p_251948_, Vec3 p_251429_, CompoundTag p_250568_, boolean p_250229_, CallbackInfoReturnable<Integer> cir) {
         ((ServerWorldBridge) source.getLevel()).bridge$pushAddEntityReason(CreatureSpawnEvent.SpawnReason.COMMAND);
     }
